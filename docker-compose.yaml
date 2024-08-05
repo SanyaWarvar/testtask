@@ -1,0 +1,55 @@
+version: "3.7"
+services:
+
+  web:
+    container_name: "web"
+    image: nginx:alpine
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    volumes:
+      - ./app/conf.d:/etc/nginx/conf.d
+    networks:
+      - custom
+
+  app:
+    container_name: "app"
+    image: app
+    environment:
+      - MONGO_HOST=mongo_db
+      - MONGO_PORT=27017
+    build:
+      context: .
+      dockerfile: Dockerfile-fastapi
+    networks:
+      - custom
+    depends_on:
+      - mongo_db
+
+  bot:
+    container_name: "bot"
+    image: bot
+
+    build:
+      context: .
+      dockerfile: Dockerfile-bot
+    environment:
+      - BASE_API_URL=web
+    networks:
+      - custom
+    depends_on:
+      - app
+      - web
+
+  mongo_db:
+      image: mongo
+      container_name: "mongo_db"
+      ports:
+        - "27017:27017"
+      networks:
+        - custom
+
+networks:
+  custom:
+    driver: bridge
